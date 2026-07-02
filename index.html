@@ -209,6 +209,10 @@
   .mc-pill:hover{color:var(--txt);border-color:var(--cyan);transform:translateY(-1px)}
   .mc-pill[aria-selected=true]{background:linear-gradient(92deg,var(--cyan),#2aa9ff);color:#04121a;border-color:transparent}
   .mc-pill .sc{font-family:"JetBrains Mono";opacity:.85}
+  .mc-pill.mc-live{border-color:var(--magenta);color:var(--txt)}
+  .mc-pill.mc-live[aria-selected=true]{background:linear-gradient(92deg,var(--magenta),#ff5c9d);color:#fff}
+  .mc-livedot{width:8px;height:8px;border-radius:50%;background:var(--magenta);box-shadow:0 0 0 0 rgba(255,45,120,.7);animation:livep 1.4s infinite}
+  @keyframes livep{0%{box-shadow:0 0 0 0 rgba(255,45,120,.6)}70%{box-shadow:0 0 0 7px rgba(255,45,120,0)}100%{box-shadow:0 0 0 0 rgba(255,45,120,0)}}
   .mc{border:1px solid var(--line);background:var(--panel);border-radius:20px;overflow:hidden;margin-top:10px}
   .mc-head{padding:18px 20px;background:linear-gradient(160deg,var(--panel-2),var(--panel));border-bottom:1px solid var(--line);position:relative;overflow:hidden}
   .mc-head::after{content:"";position:absolute;top:-50%;left:-30%;width:50%;height:200%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.05),transparent);transform:skewX(-18deg);animation:sweep 7s ease-in-out infinite}
@@ -456,6 +460,20 @@
   .un-v{color:var(--muted);font-weight:700;margin:0 2px}
   .un-ko{color:var(--cyan);font-weight:700;font-size:12.5px;font-family:var(--mono)}
   .un-note{color:var(--muted);font-size:12px;margin:10px 0 0}
+  .sch-day{margin-bottom:22px}
+  .sch-hd{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;padding-bottom:6px;border-bottom:2px solid var(--line)}
+  .sch-date{font-family:var(--head);font-size:18px;letter-spacing:.4px}
+  .sch-round{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--cyan)}
+  .sch-row{display:flex;align-items:center;gap:12px;padding:11px 12px;border:1px solid var(--line);border-radius:12px;margin-bottom:8px;background:var(--card);cursor:pointer;transition:border-color .15s,transform .1s}
+  .sch-row:hover{border-color:var(--magenta);transform:translateX(2px)}
+  .sch-ko{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--amber);min-width:74px}
+  .sch-teams{display:flex;align-items:center;gap:7px;flex:1;flex-wrap:wrap;font-size:14px}
+  .sch-teams .flag{width:22px}
+  .sch-v{color:var(--muted);font-weight:700;margin:0 1px}
+  .sch-venue{font-size:12px;color:var(--muted);text-align:right}
+  .sch-go{color:var(--magenta);font-weight:800}
+  .sch-note{color:var(--muted);font-size:12.5px;margin-top:4px;text-align:center;font-style:italic}
+  @media(max-width:560px){.sch-venue{display:none}.sch-ko{min-width:64px}}
   .mc-motm .motm-star{color:var(--amber)}
   .mc-motm b{color:var(--cyan)}
   @media (max-width:640px){.ovw{grid-template-columns:repeat(2,1fr)}}
@@ -492,6 +510,7 @@
     <button class="tab" role="tab" aria-selected="true" data-panel="today">Today</button>
     <button class="tab" role="tab" aria-selected="false" data-panel="live"><span class="tabdot"></span>Live</button>
     <button class="tab" role="tab" aria-selected="false" data-panel="results">Results</button>
+    <button class="tab" role="tab" aria-selected="false" data-panel="schedule">Fixtures</button>
     <button class="tab" role="tab" aria-selected="false" data-panel="fixtures">Predict</button>
     <button class="tab" role="tab" aria-selected="false" data-panel="groups">Groups</button>
     <button class="tab" role="tab" aria-selected="false" data-panel="bracket">Bracket</button>
@@ -526,6 +545,12 @@
     <h2 class="block"><span class="gt">Predict the Knockouts</span></h2>
     <p class="hint">Pick who advances in each Round of 32 tie — see how your call stacks up against the model. <span class="counter" id="pickCount">0 / 10 predicted</span></p>
     <div class="grid" id="fixturesGrid"></div>
+  </section>
+
+  <section role="tabpanel" id="schedule">
+    <h2 class="block"><span class="gt">Full Fixture Schedule</span></h2>
+    <p class="hint">Every upcoming knockout match, in order. Tap any game for its preview and news. All times ET.</p>
+    <div id="scheduleWrap"></div>
   </section>
 
   <section role="tabpanel" id="groups">
@@ -575,7 +600,7 @@
 
   <footer>
     <div class="upd" id="footUpd"></div>
-    <div>Snapshot from the July 1, 2026 knockout round. Pair with the Python live feed for continuous updates.</div>
+    <div>Snapshot from the July 2, 2026 knockout round. Pair with the Python live feed for continuous updates.</div>
   </footer>
 </div>
 <div id="teamOverlay" aria-hidden="true"></div>
@@ -655,6 +680,8 @@ const NAME={MEX:"Mexico",RSA:"South Africa",KOR:"Korea Rep.",CZE:"Czechia",SUI:"
 /* ---------- data ---------- */
 const OVERVIEW=[["48","Teams"],["104","Matches"],["16","Host Cities"],["3.6M","Record Crowd"]];
 const RESULTS=[
+ {h:"USA",a:"BIH",hs:2,as:0,venue:"R32 · Santa Clara",mc:"usabih"},
+ {h:"BEL",a:"SEN",hs:3,as:2,venue:"R32 · Seattle · a.e.t.",mc:"belsen"},
  {h:"ENG",a:"COD",hs:2,as:1,venue:"R32 · Atlanta",mc:"engcod"},
  {h:"MEX",a:"ECU",hs:2,as:0,venue:"R32 · Mexico City",mc:"mexecu"},
  {h:"FRA",a:"SWE",hs:3,as:0,venue:"R32 · East Rutherford",mc:"fraswe"},
@@ -665,19 +692,37 @@ const RESULTS=[
  {h:"RSA",a:"CAN",hs:0,as:1,venue:"R32 · Los Angeles",mc:"rsacan"}
 ];
 const FIXTURES=[
- {h:"BEL",a:"SEN",ko:"Today · 4:00 PM",venue:"Seattle",wp:[45.7,28,26.3]},
- {h:"USA",a:"BIH",ko:"Today · 8:00 PM",venue:"Santa Clara",wp:[71.2,17.9,10.9]},
- {h:"ESP",a:"AUT",ko:"Thu Jul 2 · 3:00 PM",venue:"Inglewood",wp:[72.9,17.6,9.5]},
- {h:"POR",a:"CRO",ko:"Thu Jul 2 · 7:00 PM",venue:"Toronto",wp:[53.5,27,19.5]},
- {h:"SUI",a:"DZA",ko:"Thu Jul 2 · 11:00 PM",venue:"Vancouver",wp:[47.2,29.2,23.6]},
+ {h:"ESP",a:"AUT",ko:"Today · 3:00 PM",venue:"Inglewood",wp:[75.7,15.9,8.4]},
+ {h:"POR",a:"CRO",ko:"Today · 7:00 PM",venue:"Toronto",wp:[55.8,25.2,19]},
+ {h:"SUI",a:"DZA",ko:"Today · 11:00 PM",venue:"Vancouver",wp:[48.7,29.3,22]},
  {h:"AUS",a:"EGY",ko:"Fri Jul 3 · 2:00 PM",venue:"Dallas",wp:[28.5,33.1,38.4]},
- {h:"ARG",a:"CPV",ko:"Fri Jul 3 · 6:00 PM",venue:"Miami",wp:[83.7,11.7,4.6]},
- {h:"COL",a:"GHA",ko:"Fri Jul 3 · 9:30 PM",venue:"Kansas City",wp:[63.6,23.2,13.2]}
+ {h:"ARG",a:"CPV",ko:"Fri Jul 3 · 6:00 PM",venue:"Miami",wp:[83.6,11.8,4.6]},
+ {h:"COL",a:"GHA",ko:"Fri Jul 3 · 9:30 PM",venue:"Kansas City",wp:[63.6,23.2,13.2]},
+ {h:"CAN",a:"MAR",ko:"Sat Jul 4 · 1:00 PM · R16",venue:"Houston",wp:[19.5,27.3,53.2]},
+ {h:"PAR",a:"FRA",ko:"Sat Jul 4 · 5:00 PM · R16",venue:"Philadelphia",wp:[5.5,12.5,82]}
+];
+const SCHEDULE=[
+ {day:"Thursday, July 2",round:"Round of 32",games:[
+   {h:"ESP",a:"AUT",ko:"3:00 PM",venue:"Inglewood"},
+   {h:"POR",a:"CRO",ko:"7:00 PM",venue:"Toronto"},
+   {h:"SUI",a:"DZA",ko:"11:00 PM",venue:"Vancouver"}]},
+ {day:"Friday, July 3",round:"Round of 32",games:[
+   {h:"AUS",a:"EGY",ko:"2:00 PM",venue:"Dallas"},
+   {h:"ARG",a:"CPV",ko:"6:00 PM",venue:"Miami"},
+   {h:"COL",a:"GHA",ko:"9:30 PM",venue:"Kansas City"}]},
+ {day:"Saturday, July 4",round:"Round of 16",games:[
+   {h:"CAN",a:"MAR",ko:"1:00 PM",venue:"Houston"},
+   {h:"PAR",a:"FRA",ko:"5:00 PM",venue:"Philadelphia"}]},
+ {day:"Sunday, July 5",round:"Round of 16",games:[
+   {h:"BRA",a:"NOR",ko:"4:00 PM",venue:"East Rutherford"},
+   {h:"MEX",a:"ENG",ko:"8:00 PM",venue:"Mexico City"}]},
+ {day:"Monday, July 6",round:"Round of 16",games:[
+   {h:"USA",a:"BEL",ko:"Time TBC",venue:"Seattle"}]}
 ];
 const TODAY=[
- {h:"ENG",a:"COD",hs:2,as:1,status:"final",venue:"Atlanta"},
- {h:"BEL",a:"SEN",ko:"4:00 PM",venue:"Seattle",wp:[45.7,28,26.3]},
- {h:"USA",a:"BIH",ko:"8:00 PM",venue:"Santa Clara",wp:[71.2,17.9,10.9]}
+ {h:"ESP",a:"AUT",ko:"3:00 PM",venue:"Inglewood",wp:[75.7,15.9,8.4]},
+ {h:"POR",a:"CRO",ko:"7:00 PM",venue:"Toronto",wp:[55.8,25.2,19]},
+ {h:"SUI",a:"DZA",ko:"11:00 PM",venue:"Vancouver",wp:[48.7,29.3,22]}
 ];
 const GROUPS={
 A:[["MEX",3,0,0,9],["RSA",1,1,1,4],["KOR",1,2,0,3],["CZE",0,2,1,1]],
@@ -739,9 +784,19 @@ const MATCHES={
   stats:{home:{poss:54,shots:16,sot:8,sblk:3,soff:5,corners:5,saves:1,fouls:9,offs:0,yc:1},away:{poss:46,shots:7,sot:2,sblk:2,soff:3,corners:3,saves:5,fouls:12,offs:4,yc:1}},
   events:[{t:7,s:"a",ty:"goal",sc:"0–1",pl:"Brian Cipenga",as:"Noah Sadiki"},{t:19,s:"h",ty:"yc",pl:"Jude Bellingham"},{t:28,s:"a",ty:"yc",pl:"Noah Sadiki"},{t:61,s:"h",ty:"sub",pin:"Anthony Gordon",pout:"Rashford"},{t:71,s:"h",ty:"sub",pin:"Eberechi Eze",pout:"Spence"},{t:75,s:"h",ty:"goal",sc:"1–1",pl:"Harry Kane",as:"Anthony Gordon"},{t:86,s:"h",ty:"goal",sc:"2–1",pl:"Harry Kane",as:"Anthony Gordon"}],
   lu:{home:["Pickford, Jordan (goalkeeper)","Spence, Djed (defender)","Konsa, Ezri (defender)","Guehi, Marc (defender)","O'Reilly, Nico (defender)","Anderson, Elliot (midfielder)","Rice, Declan (midfielder)","Madueke, Noni (forward)","Bellingham, Jude (midfielder)","Rashford, Marcus (forward)","Kane, Harry (forward)","Rogers, Morgan (midfielder)","Trafford, James (goalkeeper)","Quansah, Jarell (defender)","Mainoo, Kobbie (midfielder)"],
-      away:["Mpasi, Lionel (goalkeeper)","Wan-Bissaka, Aaron (defender)","Tuanzebe, Axel (defender)","Mbemba, Chancel (defender)","Masuaku, Arthur (defender)","Moutoussamy, Samuel (midfielder)","Mukau, Ngalayel (midfielder)","Sadiki, Noah (midfielder)","Mbuku, Nathanael (midfielder)","Wissa, Yoane (forward)","Cipenga, Brian (forward)","Kapuadi, Steve (defender)","Epolo, Matthieu (goalkeeper)","Mayele, Fiston (forward)","Kakuta, Gael (forward)"]}}
+      away:["Mpasi, Lionel (goalkeeper)","Wan-Bissaka, Aaron (defender)","Tuanzebe, Axel (defender)","Mbemba, Chancel (defender)","Masuaku, Arthur (defender)","Moutoussamy, Samuel (midfielder)","Mukau, Ngalayel (midfielder)","Sadiki, Noah (midfielder)","Mbuku, Nathanael (midfielder)","Wissa, Yoane (forward)","Cipenga, Brian (forward)","Kapuadi, Steve (defender)","Epolo, Matthieu (goalkeeper)","Mayele, Fiston (forward)","Kakuta, Gael (forward)"]}},
+ belsen:{h:"BEL",a:"SEN",hs:3,as:2,venue:"Seattle Stadium · Seattle",stadium:"Seattle Stadium (Lumen Field)",city:"Seattle, WA",cap:"68,740",att:null,round:"Round of 32 · Wed Jul 1 · after extra time",motm:"Youri Tielemans (Belgium)",
+  stats:{home:{poss:53,shots:21,sot:5,sblk:6,soff:10,corners:4,saves:3,fouls:22,offs:2,yc:1},away:{poss:47,shots:19,sot:5,sblk:3,soff:11,corners:2,saves:2,fouls:11,offs:2,yc:1}},
+  events:[{t:25,s:"a",ty:"goal",sc:"0–1",pl:"Habib Diarra",as:"Ismaïla Sarr"},{t:46,s:"h",ty:"sub",pin:"Romelu Lukaku",pout:"De Ketelaere"},{t:51,s:"a",ty:"goal",sc:"0–2",pl:"Ismaïla Sarr",as:"Moussa Niakhaté"},{t:56,s:"h",ty:"sub",pin:"Witsel",pout:"De Bruyne"},{t:86,s:"h",ty:"goal",sc:"1–2",pl:"Romelu Lukaku",as:"Thomas Meunier"},{t:89,s:"h",ty:"goal",sc:"2–2",pl:"Youri Tielemans",as:"Leandro Trossard"},{t:120,x:"+5",s:"h",ty:"goal",sc:"3–2",pl:"Youri Tielemans (penalty)"}],
+  lu:{home:["Courtois, Thibaut (goalkeeper)","Castagne, Timothy (defender)","Mechele, Brandon (defender)","Theate, Arthur (defender)","De Cuyper, Maxim (defender)","Vanaken, Hans (midfielder)","Tielemans, Youri (midfielder)","De Bruyne, Kevin (midfielder)","Doku, Jeremy (forward)","Trossard, Leandro (forward)","De Ketelaere, Charles (forward)","Lukaku, Romelu (forward)","Meunier, Thomas (defender)","Witsel, Axel (midfielder)","Moreira, Diego (midfielder)","Seys, Joaquin (defender)","Penders, Mike (goalkeeper)"],
+      away:["Diaw, Mory (goalkeeper)","Diatta, Krépin (defender)","Niakhaté, Moussa (defender)","Ciss, Pathé (defender)","Jakobs, Ismail (defender)","Diarra, Habib (midfielder)","Gueye, Idrissa (midfielder)","Gueye, Pape (midfielder)","Ndiaye, Iliman (forward)","Sarr, Ismaïla (forward)","Mané, Sadio (forward)","Sarr, Mamadou (defender)","Diouf, El Hadji Malick (defender)","Camara, Lamine (midfielder)","Diao, Assane (forward)"]}},
+ usabih:{h:"USA",a:"BIH",hs:2,as:0,venue:"Bay Area Stadium · Santa Clara",stadium:"San Francisco Bay Area Stadium (Levi's Stadium)",city:"Santa Clara, CA",cap:"68,500",att:"68,827",round:"Round of 32 · Wed Jul 1",motm:"Malik Tillman (USA)",
+  stats:{home:{poss:48,shots:9,sot:2,sblk:2,soff:5,corners:4,saves:4,fouls:7,offs:3,yc:0},away:{poss:52,shots:11,sot:4,sblk:3,soff:4,corners:3,saves:0,fouls:13,offs:0,yc:1}},
+  events:[{t:45,s:"h",ty:"goal",sc:"1–0",pl:"Folarin Balogun",as:"Malik Tillman"},{t:64,s:"h",ty:"rc",pl:"Folarin Balogun",off:"Serious foul play (VAR)"},{t:80,s:"a",ty:"yc",pl:"Stjepan Radeljić"},{t:82,s:"h",ty:"goal",sc:"2–0",pl:"Malik Tillman (free kick)"}],
+  lu:{home:["Freese, Matt (goalkeeper)","Freeman, Alex (defender)","Richards, Chris (defender)","Ream, Tim (defender)","Robinson, Antonee (defender)","McKennie, Weston (midfielder)","Adams, Tyler (midfielder)","Tillman, Malik (midfielder)","Pulisic, Christian (forward)","Balogun, Folarin (forward)","Dest, Sergiño (forward)","Arfsten, Max (defender)","Robinson, Miles (defender)","Weah, Timothy (forward)","Brady, Chris (goalkeeper)"],
+      away:["Vasilj, Nikola (goalkeeper)","Dedic, Amar (defender)","Katic, Nikola (defender)","Radeljić, Stjepan (defender)","Muharemović, Tarik (defender)","Kolašinac, Sead (defender)","Sunjić, Ivan (midfielder)","Gigović, Armin (midfielder)","Alajbegović, Kerim (forward)","Džeko, Edin (forward)","Demirović, Ermedin (forward)","Tabaković, Haris (forward)","Tahirović, Benjamin (midfielder)","Hadžikadunić, Dennis (defender)","Baždar, Samed (forward)"]}}
 };
-const MC_ORDER=["engcod","mexecu","fraswe","civnor","nedmar","gerpar","brajpn","rsacan"];
+const MC_ORDER=["usabih","belsen","engcod","mexecu","fraswe","civnor","nedmar","gerpar","brajpn","rsacan"];
 const NEWS=[
  {out:"FIFA.com",cat:"official",url:"https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/news",t:"Official news, highlights & Golden Boot race",d:"The tournament's own newsroom: match recaps, video highlights and the live race for the adidas Golden Boot."},
  {out:"ESPN",cat:"results",url:"https://www.espn.com/soccer/story/_/id/48939282/2026-fifa-world-cup-fixtures-results-match-schedule-group-stage-knockout-rounds-bracket",t:"Full fixtures, results & match schedule",d:"ESPN's running hub for every score, the knockout bracket and feature coverage across all 104 matches."},
@@ -878,6 +933,17 @@ function renderFixtures(){
   $("#fixturesGrid").innerHTML=FIXTURES.map((m,i)=>fixtureCard(m,i)).join("");
   $("#pickCount").textContent=`${Object.keys(picks).length} / ${FIXTURES.length} predicted`;
 }
+function renderSchedule(){
+  const w=$("#scheduleWrap"); if(!w) return;
+  w.innerHTML=SCHEDULE.map(d=>{
+    const rows=d.games.map(g=>`<div class="sch-row clickcard" data-openmatch="1" data-mh="${g.h}" data-ma="${g.a}" data-ko="${g.ko}" data-venue="${g.venue}">
+        <span class="sch-ko">${g.ko}</span>
+        <span class="sch-teams"><span class="flag">${flag(g.h)}</span><b>${NAME[g.h]||g.h}</b><span class="sch-v">v</span><span class="flag">${flag(g.a)}</span><b>${NAME[g.a]||g.a}</b></span>
+        <span class="sch-venue">${g.venue}</span>
+        <span class="sch-go">\u2192</span></div>`).join("");
+    return `<div class="sch-day"><div class="sch-hd"><span class="sch-date">${d.day}</span><span class="sch-round">${d.round}</span></div>${rows}</div>`;
+  }).join("")+`<p class="sch-note">The remaining Round of 16 ties are set once Thursday & Friday's Round of 32 games finish.</p>`;
+}
 
 /* ---------- groups ---------- */
 function renderGroups(){
@@ -927,8 +993,8 @@ const BR32=[
  {id:78,A:{code:"CIV"},B:{code:"NOR"},hs:1,as:2},
  {id:79,A:{code:"MEX"},B:{code:"ECU"},hs:2,as:0},
  {id:80,A:{code:"ENG"},B:{code:"COD"},hs:2,as:1},
- {id:81,A:{code:"USA"},B:{code:"BIH"},ko:"Wed 8:00 PM"},
- {id:82,A:{code:"BEL"},B:{code:"SEN"},ko:"Wed 4:00 PM"},
+ {id:81,A:{code:"USA"},B:{code:"BIH"},hs:2,as:0},
+ {id:82,A:{code:"BEL"},B:{code:"SEN"},hs:3,as:2},
  {id:83,A:{code:"POR"},B:{code:"CRO"},ko:"Thu 7:00 PM"},
  {id:84,A:{code:"ESP"},B:{code:"AUT"},ko:"Thu 3:00 PM"},
  {id:85,A:{code:"SUI"},B:{code:"DZA"},ko:"Thu 11:00 PM"},
@@ -1052,6 +1118,13 @@ const TEAMMETA={
 function tmeta(c){return TEAMMETA[c]||{c:"",r:null,h:[]};}
 const TEAM_LINEUP={};
 Object.values(MATCHES).forEach(m=>{TEAM_LINEUP[m.h]=m.lu.home;TEAM_LINEUP[m.a]=m.lu.away;});
+// sourced starting XIs + benches for teams still in the tournament without a captured match feed
+// (confirmed matchday lineups from official team channels / ESPN / Al Jazeera, July 2026)
+Object.assign(TEAM_LINEUP,{
+ USA:["Freese, Matt (goalkeeper)","Freeman, Alex (defender)","Richards, Chris (defender)","Ream, Tim (defender)","Robinson, Antonee (defender)","Adams, Tyler (midfielder)","McKennie, Weston (midfielder)","Tillman, Malik (midfielder)","Pulisic, Christian (forward)","Balogun, Folarin (forward)","Dest, Sergiño (forward)","Turner, Matt (goalkeeper)","Brady, Chris (goalkeeper)","Trusty, Auston (defender)","Robinson, Miles (defender)","Scally, Joe (defender)","Arfsten, Max (defender)","McKenzie, Mark (defender)","Berhalter, Sebastian (midfielder)","Aaronson, Brenden (midfielder)","Reyna, Gio (midfielder)","Weah, Tim (forward)","Pepi, Ricardo (forward)","Wright, Haji (forward)","Zendejas, Alex (forward)"],
+ BEL:["Courtois, Thibaut (goalkeeper)","Castagne, Timothy (defender)","Theate, Arthur (defender)","Mechele, Brandon (defender)","De Cuyper, Maxim (defender)","Tielemans, Youri (midfielder)","Vanaken, Hans (midfielder)","De Bruyne, Kevin (midfielder)","Doku, Jeremy (forward)","De Ketelaere, Charles (forward)","Trossard, Leandro (forward)","Lammens, Senne (goalkeeper)","Penders, Mike (goalkeeper)","Meunier, Thomas (defender)","De Winter, Koni (defender)","Ngoy, Nathan (defender)","Seys, Joaquin (defender)","Onana, Amadou (midfielder)","Raskin, Nicolas (midfielder)","Witsel, Axel (midfielder)","Saelemaekers, Alexis (midfielder)","Lukaku, Romelu (forward)","Lukebakio, Dodi (forward)","Moreira, Diego (forward)","Fernandez-Pardo, Matias (forward)"],
+ SEN:["Diaw, Mory (goalkeeper)","Diatta, Krépin (defender)","Ciss, Pathé (defender)","Niakhaté, Moussa (defender)","Jakobs, Ismail (defender)","Diarra, Habib (midfielder)","Gueye, Idrissa (midfielder)","Gueye, Pape (midfielder)","Ndiaye, Iliman (forward)","Sarr, Ismaïla (forward)","Mané, Sadio (forward)","Diouf, Yehvann (goalkeeper)","Koulibaly, Kalidou (defender)","Seck, Abdoulaye (defender)","Diouf, El Hadji Malick (defender)","Mendy, Antoine (defender)","Sarr, Mamadou (defender)","Camara, Lamine (midfielder)","Sarr, Pape Matar (midfielder)","Mbaye, Ibrahim (midfielder)","Jackson, Nicolas (forward)","Dieng, Bamba (forward)","Ndiaye, Cherif (forward)","Diao, Assane (forward)"]
+});
 // real marks sourced from match reports (unique surnames only, to avoid mis-tagging)
 PLAYER_MARK["team|BRA|Paqueta"]="inj";   PLAYER_MARK["brajpn|h|Paqueta"]="inj";
 PLAYER_MARK["team|BRA|Casemiro"]="y";     PLAYER_MARK["brajpn|h|Casemiro"]="y";
@@ -1161,9 +1234,9 @@ function statBar(lab,h,a,suf=""){
     <div class="track"><i class="home" data-w="${h/tot*100}" style="width:0"></i><i class="away" data-w="${a/tot*100}" style="width:0"></i></div></div>`;
 }
 function renderMCSelector(){
-  $("#mcSel").innerHTML=MC_ORDER.map(k=>{const m=MATCHES[k];
-    return `<button class="mc-pill" data-mck="${k}" aria-selected="${k===currentMatch}">
-      ${flag(m.h)} <span class="sc">${m.hs}\u2013${m.as}</span> ${flag(m.a)}</button>`;}).join("");
+  $("#mcSel").innerHTML=MC_ORDER.map(k=>{const m=MATCHES[k];const live=k.indexOf("live_")===0;
+    return `<button class="mc-pill${live?" mc-live":""}" data-mck="${k}" aria-selected="${k===currentMatch}">
+      ${live?'<span class="mc-livedot"></span>':""}${flag(m.h)} <span class="sc">${m.hs}\u2013${m.as}</span> ${flag(m.a)}</button>`;}).join("");
 }
 function renderMatchCenter(){
   const m=MATCHES[currentMatch], s=m.stats;
@@ -1254,7 +1327,7 @@ function renderSources(){
 renderOverview();renderHero();
 $("#todayGrid").innerHTML=TODAY.map(todayCard).join("");
 $("#resultsGrid").innerHTML=RESULTS.map(matchCard).join("");
-renderFixtures();renderGroups();renderThird();renderBracket();renderMCSelector();renderMatchCenter();
+renderFixtures();renderSchedule();renderGroups();renderThird();renderBracket();renderMCSelector();renderMatchCenter();
 renderNewsFilters();renderNews();renderSources();
 
 /* ---------- events ---------- */
